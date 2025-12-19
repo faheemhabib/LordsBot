@@ -1,0 +1,6 @@
+@LordsBot.ZipUpload_HostAddress = http://localhost:5268
+
+GET {{LordsBot.ZipUpload_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
