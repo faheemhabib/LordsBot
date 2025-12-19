@@ -102,6 +102,9 @@ public class ZipFileService
             Directory.CreateDirectory(extractFolder);
             _logger.LogInformation("Extracting zip to: {ExtractFolder}", extractFolder);
 
+            // Get the full path of the extraction folder for security validation
+            var extractFolderFullPath = Path.GetFullPath(extractFolder);
+
             using (var archive = ZipFile.OpenRead(zipFilePath))
             {
                 foreach (var entry in archive.Entries)
@@ -113,6 +116,15 @@ public class ZipFileService
                     }
 
                     var destinationPath = Path.Combine(extractFolder, entry.FullName);
+                    
+                    // Security: Prevent zip slip vulnerability by validating the destination path
+                    var destinationFullPath = Path.GetFullPath(destinationPath);
+                    if (!destinationFullPath.StartsWith(extractFolderFullPath, StringComparison.Ordinal))
+                    {
+                        _logger.LogWarning("Zip slip attempt detected: {EntryName} would extract to {Path}", entry.FullName, destinationFullPath);
+                        result.Errors.Add($"Security violation: Entry '{entry.FullName}' attempts to extract outside the target directory");
+                        continue;
+                    }
                     
                     // Ensure directory exists
                     var destinationDir = Path.GetDirectoryName(destinationPath);
